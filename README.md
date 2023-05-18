@@ -122,6 +122,8 @@ const dataProvider: DataProvider = {
 
 - session (required): The async_sessionmaker[AsyncSession] for the database session.
 
+- depends (optional): The sequence of the dependencies
+
 - prefix (optional): The URL prefix for the React Admin routes. Default is '/ra'.
 
 - deleted_field (optional): The name of the field of the table to mark deleted fields (e.g., 'is_deleted'). Default is None.

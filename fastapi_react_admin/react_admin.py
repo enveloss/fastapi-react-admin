@@ -1,5 +1,5 @@
-from typing import Union
-from fastapi import APIRouter, Query, Request
+from typing import Union, Sequence
+from fastapi import APIRouter, Query, Request, Depends
 
 from pydantic.types import Json
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -14,6 +14,7 @@ class ReactAdmin:
         *,
         router: APIRouter,
         session: async_sessionmaker[AsyncSession],
+        depends: Sequence[Depends] = [],
         prefix: str = '/ra',
         deleted_field: str = None,
         exclude_deleted: str = True,
@@ -26,6 +27,7 @@ class ReactAdmin:
             table: The SQLAlchemy model representing the database table.
             router: The APIRouter instance to mount the routes.
             session: The async_sessionmaker[AsyncSession] for the database session.
+            depends: The sequence of the dependencies
             prefix: The URL prefix for the react admin routes.
             deleted_field: The name of the field of the table for mark deleted fields (like is_deleted) (optional).
             exclude_deleted: Whether to exclude deleted records (optional).
@@ -35,6 +37,7 @@ class ReactAdmin:
         self.table = table
         self.user_router = router
         self.Session = session
+        self.depends = depends
         self.deleted_filed = deleted_field
         self.exclude_deleted = exclude_deleted
 
@@ -58,7 +61,7 @@ class ReactAdmin:
         self._router.add_api_route('/delete/{id}', self._delete, response_model=RaResponseModel, methods=['POST'])
         self._router.add_api_route('/deleteMany', self._delete_many, response_model=RaResponseModel, methods=['POST'])
 
-        self.user_router.include_router(self._router)
+        self.user_router.include_router(self._router, dependencies=self.depends)
 
     async def _get_list(self, 
         sort: Json = Query(), 
