@@ -1,0 +1,1 @@
+from .react_admin import ReactAdmin

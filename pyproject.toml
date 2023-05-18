@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "fastapi-react-admin"
+version = "0.1.0"
+description = "Module to automaticly generate fastapi routes for using react admin"
+authors = ["Enveloss"]
+readme = "README.md"
+packages = [{include = "fastapi_react_admin"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.95.2"
+sqlalchemy = "^2.0.13"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
