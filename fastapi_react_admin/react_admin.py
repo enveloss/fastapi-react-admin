@@ -14,8 +14,6 @@ class ReactAdmin:
         *,
         router: APIRouter,
         session: async_sessionmaker[AsyncSession],
-        depends: Sequence[Depends] = [],
-        prefix: str = '/ra',
         deleted_field: str = None,
         exclude_deleted: str = True,
         include_in_schema: bool = False,
@@ -27,8 +25,6 @@ class ReactAdmin:
             table: The SQLAlchemy model representing the database table.
             router: The APIRouter instance to mount the routes.
             session: The async_sessionmaker[AsyncSession] for the database session.
-            depends: The sequence of the dependencies
-            prefix: The URL prefix for the react admin routes.
             deleted_field: The name of the field of the table for mark deleted fields (like is_deleted) (optional).
             exclude_deleted: Whether to exclude deleted records (optional).
             include_in_schema: Whether to include the routes in the generated schema (optional).
@@ -37,31 +33,57 @@ class ReactAdmin:
         self.table = table
         self.user_router = router
         self.Session = session
-        self.depends = depends
         self.deleted_filed = deleted_field
         self.exclude_deleted = exclude_deleted
-
-        self._router = APIRouter(
-            prefix=prefix, 
-            tags=['React Admin routers'], 
-            include_in_schema=include_in_schema
-        )
+        self.include_in_schema = include_in_schema
     
-    def mount(self):
+    def mount(self,
+        depends: Sequence[Depends] = [],
+        prefix: str = '/ra',
+        tags: list[str] = ['RA routes'],
+        include_get_list: bool = True,
+        include_get_one: bool = True,
+        include_get_many: bool = True,
+        include_create: bool = True,
+        include_update: bool = True,
+        include_update_many: bool = True,
+        include_delete: bool = True,
+        include_delete_many: bool = True,
+    ):
         '''
         Mounts the routes to the user_router.
-        '''
-        
-        self._router.add_api_route('/getList', self._get_list, response_model=RaResponseModel, methods=['POST'])
-        self._router.add_api_route('/getOne/{id}', self._get_one, response_model=RaResponseModel, methods=['POST'])
-        self._router.add_api_route('/getMany/{id}', self._get_many, response_model=RaResponseModel, methods=['POST'])
-        self._router.add_api_route('/create', self._create, response_model=RaResponseModel, methods=['POST'])
-        self._router.add_api_route('/update/{id}', self._update, response_model=RaResponseModel, methods=['POST'])
-        self._router.add_api_route('/updateMany', self._update_many, response_model=RaResponseModel, methods=['POST'])
-        self._router.add_api_route('/delete/{id}', self._delete, response_model=RaResponseModel, methods=['POST'])
-        self._router.add_api_route('/deleteMany', self._delete_many, response_model=RaResponseModel, methods=['POST'])
 
-        self.user_router.include_router(self._router, dependencies=self.depends)
+        Args:  
+            depends: The sequence of the dependencies
+            prefix: The URL prefix for the react admin routes.
+            tags: The FastAPI tags.
+            include_*: The params to include/exclude specific route.
+        '''
+
+        router = APIRouter(
+            prefix=prefix, 
+            tags=tags, 
+            include_in_schema=self.include_in_schema
+        )
+        
+        if include_get_list: 
+            router.add_api_route('/getList', self._get_list, response_model=RaResponseModel, methods=['POST'])
+        if include_get_one: 
+            router.add_api_route('/getOne/{id}', self._get_one, response_model=RaResponseModel, methods=['POST'])
+        if include_get_many: 
+            router.add_api_route('/getMany/{id}', self._get_many, response_model=RaResponseModel, methods=['POST'])
+        if include_create: 
+            router.add_api_route('/create', self._create, response_model=RaResponseModel, methods=['POST'])
+        if include_update: 
+            router.add_api_route('/update/{id}', self._update, response_model=RaResponseModel, methods=['POST'])
+        if include_update_many: 
+            router.add_api_route('/updateMany', self._update_many, response_model=RaResponseModel, methods=['POST'])
+        if include_delete: 
+            router.add_api_route('/delete/{id}', self._delete, response_model=RaResponseModel, methods=['POST'])
+        if include_delete_many: 
+            router.add_api_route('/deleteMany', self._delete_many, response_model=RaResponseModel, methods=['POST'])
+
+        self.user_router.include_router(self._router, dependencies=depends)
 
     async def _get_list(self, 
         sort: Json = Query(), 
