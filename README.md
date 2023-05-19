@@ -21,10 +21,9 @@ router = app.router
 Session = async_sessionmaker(AsyncSession)
 
 ReactAdmin(
-    table=MyTableModel, 
-    router=router, 
+    table=MyTableModel,  
     session=Session
-).mount()
+).mount(router)
 ```
 
 React Admin data provider:
@@ -118,8 +117,6 @@ const dataProvider: DataProvider = {
 ### ReactAdmin class params
 - table (required): The SQLAlchemy model representing the database table.
 
-- router (required): The APIRouter instance to mount the routes.
-
 - session (required): The async_sessionmaker[AsyncSession] for the database session.
 
 - deleted_field (optional): The name of the field of the table to mark deleted fields (e.g., 'is_deleted'). Default is None.
@@ -129,6 +126,8 @@ const dataProvider: DataProvider = {
 - include_in_schema (optional): Whether to include the routes in the generated schema. Default is False.
 
 ### ReactAdmin mount params
+- router (required): The APIRouter instance to mount the routes.
+
 - depends (optional): The sequence of the dependencies
 
 - prefix (optional): The URL prefix for the React Admin routes. Default is '/ra'.

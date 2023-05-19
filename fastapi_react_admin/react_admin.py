@@ -12,7 +12,6 @@ class ReactAdmin:
     def __init__(self, 
         table: any,
         *,
-        router: APIRouter,
         session: async_sessionmaker[AsyncSession],
         deleted_field: str = None,
         exclude_deleted: str = True,
@@ -23,7 +22,6 @@ class ReactAdmin:
 
         Args:
             table: The SQLAlchemy model representing the database table.
-            router: The APIRouter instance to mount the routes.
             session: The async_sessionmaker[AsyncSession] for the database session.
             deleted_field: The name of the field of the table for mark deleted fields (like is_deleted) (optional).
             exclude_deleted: Whether to exclude deleted records (optional).
@@ -31,13 +29,14 @@ class ReactAdmin:
         '''
         
         self.table = table
-        self.user_router = router
         self.Session = session
         self.deleted_filed = deleted_field
         self.exclude_deleted = exclude_deleted
         self.include_in_schema = include_in_schema
     
     def mount(self,
+        router: APIRouter,
+        *,
         depends: Sequence[Depends] = [],
         prefix: str = '/ra',
         tags: list[str] = ['RA routes'],
@@ -54,36 +53,37 @@ class ReactAdmin:
         Mounts the routes to the user_router.
 
         Args:  
+            router: The APIRouter instance to mount the routes.
             depends: The sequence of the dependencies
             prefix: The URL prefix for the react admin routes.
             tags: The FastAPI tags.
             include_*: The params to include/exclude specific route.
         '''
 
-        router = APIRouter(
+        internal_router = APIRouter(
             prefix=prefix, 
             tags=tags, 
             include_in_schema=self.include_in_schema
         )
         
         if include_get_list: 
-            router.add_api_route('/getList', self._get_list, response_model=RaResponseModel, methods=['POST'])
+            internal_router.add_api_route('/getList', self._get_list, response_model=RaResponseModel, methods=['POST'])
         if include_get_one: 
-            router.add_api_route('/getOne/{id}', self._get_one, response_model=RaResponseModel, methods=['POST'])
+            internal_router.add_api_route('/getOne/{id}', self._get_one, response_model=RaResponseModel, methods=['POST'])
         if include_get_many: 
-            router.add_api_route('/getMany/{id}', self._get_many, response_model=RaResponseModel, methods=['POST'])
+            internal_router.add_api_route('/getMany/{id}', self._get_many, response_model=RaResponseModel, methods=['POST'])
         if include_create: 
-            router.add_api_route('/create', self._create, response_model=RaResponseModel, methods=['POST'])
+            internal_router.add_api_route('/create', self._create, response_model=RaResponseModel, methods=['POST'])
         if include_update: 
-            router.add_api_route('/update/{id}', self._update, response_model=RaResponseModel, methods=['POST'])
+            internal_router.add_api_route('/update/{id}', self._update, response_model=RaResponseModel, methods=['POST'])
         if include_update_many: 
-            router.add_api_route('/updateMany', self._update_many, response_model=RaResponseModel, methods=['POST'])
+            internal_router.add_api_route('/updateMany', self._update_many, response_model=RaResponseModel, methods=['POST'])
         if include_delete: 
-            router.add_api_route('/delete/{id}', self._delete, response_model=RaResponseModel, methods=['POST'])
+            internal_router.add_api_route('/delete/{id}', self._delete, response_model=RaResponseModel, methods=['POST'])
         if include_delete_many: 
-            router.add_api_route('/deleteMany', self._delete_many, response_model=RaResponseModel, methods=['POST'])
+            internal_router.add_api_route('/deleteMany', self._delete_many, response_model=RaResponseModel, methods=['POST'])
 
-        self.user_router.include_router(self._router, dependencies=depends)
+        router.include_router(internal_router, dependencies=depends)
 
     async def _get_list(self, 
         sort: Json = Query(), 
