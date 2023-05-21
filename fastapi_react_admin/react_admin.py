@@ -71,7 +71,7 @@ class ReactAdmin:
         if include_get_one: 
             internal_router.add_api_route('/getOne/{id}', self._get_one, response_model=RaResponseModel, methods=['POST'])
         if include_get_many: 
-            internal_router.add_api_route('/getMany/{id}', self._get_many, response_model=RaResponseModel, methods=['POST'])
+            internal_router.add_api_route('/getMany', self._get_many, response_model=RaResponseModel, methods=['POST'])
         if include_create: 
             internal_router.add_api_route('/create', self._create, response_model=RaResponseModel, methods=['POST'])
         if include_update: 
