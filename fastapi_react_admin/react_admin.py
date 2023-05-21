@@ -113,15 +113,16 @@ class ReactAdmin:
             return RaResponseModel(data=result)
     
     async def _get_many(self, filter: Json = Query()):
+        internal_filter = {}
         if self.deleted_filed and self.exclude_deleted:
-            filter[self.deleted_filed] = False
+            internal_filter[self.deleted_filed] = False
 
         async with self.Session() as session:
             result = await session.execute(
                 select(self.table).where(
                     self.table.id.in_(filter['id'])
                 ).filter_by(
-                    **filter
+                    **internal_filter
                 )
             )
         
