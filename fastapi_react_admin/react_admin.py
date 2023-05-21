@@ -126,7 +126,7 @@ class ReactAdmin:
                 )
             )
         
-            return RaResponseModel(data=result)
+            return RaResponseModel(data=result.scalars().all())
 
     async def _create(self, request: Request):
         async with self.Session() as session:
