@@ -5,6 +5,7 @@ from pydantic.types import Json
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from sqlalchemy import delete, insert, select, update, text
+from sqlalchemy.sql.base import ExecutableOption
 
 from .schemas import RaResponseModel
 
@@ -15,6 +16,7 @@ class ReactAdmin:
         session: async_sessionmaker[AsyncSession],
         deleted_field: str = None,
         exclude_deleted: str = True,
+        options: list[ExecutableOption] = [],
         include_in_schema: bool = False,
     ) -> None:
         '''
@@ -25,6 +27,7 @@ class ReactAdmin:
             session: The async_sessionmaker[AsyncSession] for the database session.
             deleted_field: The name of the field of the table for mark deleted fields (like is_deleted) (optional).
             exclude_deleted: Whether to exclude deleted records (optional).
+            options: The list of ExecutableOption of the sqlalchemy.
             include_in_schema: Whether to include the routes in the generated schema (optional).
         '''
         
@@ -32,6 +35,7 @@ class ReactAdmin:
         self.Session = session
         self.deleted_filed = deleted_field
         self.exclude_deleted = exclude_deleted
+        self.options = options
         self.include_in_schema = include_in_schema
     
     def mount(self,
@@ -99,7 +103,7 @@ class ReactAdmin:
                     **filter
                 ).order_by(
                     text(f"{sort[0]} {sort[1]}")
-                )
+                ).options(*self.options)
             )).scalars().all()
 
             return RaResponseModel(
@@ -109,7 +113,7 @@ class ReactAdmin:
     
     async def _get_one(self, id: Union[int, str]):
         async with self.Session() as session:
-            result = await session.get(self.table, id)
+            result = await session.get(self.table, id, options=self.options)
             return RaResponseModel(data=result)
     
     async def _get_many(self, filter: Json = Query()):
@@ -123,7 +127,7 @@ class ReactAdmin:
                     self.table.id.in_(filter['id'])
                 ).filter_by(
                     **internal_filter
-                )
+                ).options(*self.options)
             )
         
             return RaResponseModel(data=result.scalars().all())
@@ -133,7 +137,7 @@ class ReactAdmin:
             result = await session.execute(
                 insert(self.table).values(
                     **(await request.json())
-                ).returning(self.table)
+                ).returning(self.table).options(*self.options)
             )
 
             await session.commit()
@@ -144,7 +148,9 @@ class ReactAdmin:
             result =  await session.execute(
                 update(self.table).values(
                     **(await request.json())
-                ).where(self.table.id == id).returning(self.table)
+                ).where(self.table.id == id)
+                .returning(self.table)
+                .options(*self.options)
             )
 
             await session.commit()
@@ -155,7 +161,7 @@ class ReactAdmin:
             await session.execute(
                 update(self.table).values(
                     **(await request.json())
-                ).where(self.table.id.in_(filter['id']))
+                ).where(self.table.id.in_(filter['id'])).options(*self.options)
             )
 
             await session.commit()
@@ -166,14 +172,14 @@ class ReactAdmin:
             if not self.deleted_filed: 
                 req = delete(self.table).where(
                     self.table.id == id
-                ).returning(self.table)
+                ).returning(self.table).options(*self.options)
 
             else: 
                 req = update(self.table).where(
                     self.table.id == id
                 ).values(
                     {self.deleted_filed: True}
-                ).returning(self.table)
+                ).returning(self.table).options(*self.options)
 
             result = await session.execute(req)
 
@@ -185,16 +191,16 @@ class ReactAdmin:
             if not self.deleted_filed: 
                 req = delete(self.table).where(
                     self.table.id.in_(filter['id'])
-                ).returning(self.table)
+                )
 
             else: 
                 req = update(self.table).where(
                     self.table.id.in_(filter['id'])
                 ).values(
                     {self.deleted_filed: True}
-                ).returning(self.table)
+                )
 
-            await session.execute(req)
+            await session.execute(req.returning(self.table).options(*self.options))
 
             await session.commit()
             return RaResponseModel(data=filter['id'])

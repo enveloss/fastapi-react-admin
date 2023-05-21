@@ -123,6 +123,8 @@ const dataProvider: DataProvider = {
 
 - exclude_deleted (optional): Whether to exclude deleted records. Default is True.
 
+- options (optional): The list of ExecutableOption of the sqlalchemy. Default is [].
+
 - include_in_schema (optional): Whether to include the routes in the generated schema. Default is False.
 
 ### ReactAdmin mount params
